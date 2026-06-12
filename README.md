@@ -1,5 +1,7 @@
 # Job Tracker
 
+![Job Tracker screenshot](screenshot.png)
+
 A lightweight, privacy-first job application tracker that runs entirely 
 in your browser. No sign-up, no server, no data sent anywhere.
 
