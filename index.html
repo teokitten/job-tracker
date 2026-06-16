@@ -34,7 +34,7 @@ a.btn-icon:hover{background:var(--bg-applied);border-color:var(--c-applied);colo
 .link-arrow{font-size:11px;color:var(--c-applied);text-decoration:none;opacity:.7;margin-left:4px;vertical-align:middle}
 .link-arrow:hover{opacity:1}
 
-.stats{display:flex;gap:6px;padding:10px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center}
+.stats{display:flex;gap:6px;padding:10px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;position:sticky;top:45px;z-index:99;background:rgba(13,17,23,.98);backdrop-filter:blur(8px);}
 .stat-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s}
 .stat-btn:hover{color:var(--text)}
 .stat-btn .n{font-weight:600}
@@ -44,7 +44,7 @@ a.btn-icon:hover{background:var(--bg-applied);border-color:var(--c-applied);colo
 .stat-btn.active-Rejected{border-color:var(--c-rejected);color:var(--c-rejected)}
 .stat-btn.active-Saved{border-color:var(--c-saved);color:var(--c-saved)}
 
-.toolbar{display:flex;gap:10px;padding:10px 24px;align-items:center;flex-wrap:wrap}
+.toolbar{display:flex;gap:10px;padding:10px 24px;align-items:center;flex-wrap:wrap;position:sticky;top:90px;z-index:98;background:rgba(13,17,23,.98);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
 .search-wrap{position:relative;flex:1;min-width:200px}
 .search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
 .search-input{width:100%;padding:7px 10px 7px 30px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px}
@@ -60,7 +60,7 @@ tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 tbody tr:hover{background:var(--surface)}
 tbody tr:last-child{border-bottom:none}
 tbody td{padding:9px 10px;vertical-align:middle}
-.td-company{font-weight:600}
+.td-company{font-weight:600;color:var(--text)}
 .td-company a{color:var(--text);text-decoration:none}
 .td-company a:hover{color:#58a6ff;text-decoration:underline}
 .td-role{color:var(--muted);font-size:13px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -96,12 +96,43 @@ tbody td{padding:9px 10px;vertical-align:middle}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border)}
 
-footer{text-align:center;padding:20px 24px 28px;border-top:1px solid var(--border)}
+footer{text-align:center;padding:20px 24px 28px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;}
 footer a{color:var(--muted);font-size:12px;text-decoration:none}
 footer a:hover{color:var(--text)}
 
 .toast{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 16px;font-size:13px;color:var(--text);z-index:400;opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
+
+@media print {
+  :root {
+    --text:#000;--muted:#444;--border:#ccc;--surface:#fff;
+    --surface2:#f5f5f5;--bg:#fff;
+    --bg-applied:transparent;--bg-rejected:transparent;--bg-saved:transparent;
+    --c-applied:#000;--c-rejected:#000;--c-saved:#000;
+  }
+  @page { size: A4 landscape; margin: 1.2cm; }
+  .header, .stats, .toolbar, .btn-add, td:last-child, th:last-child,
+  .link-arrow, .btn-icon { display: none !important; }
+  body { background: #fff; color: #000; font-size: 11px; }
+  .table-wrap { box-shadow: none; border: none; overflow: visible; }
+  table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
+  th, td { border: 1px solid #bbb; padding: 4px 6px; text-align: left; word-wrap: break-word; overflow: hidden; color: #000 !important; opacity: 1 !important; }
+  th { background: #f0f0f0; font-weight: 600; }
+  th:nth-child(1), td:nth-child(1) { width: 12%; }
+  th:nth-child(2), td:nth-child(2) { width: 18%; }
+  th:nth-child(3), td:nth-child(3) { width: 14%; }
+  th:nth-child(4), td:nth-child(4) { width: 12%; }
+  th:nth-child(5), td:nth-child(5) { width: 10%; }
+  th:nth-child(6), td:nth-child(6) { width: 10%; }
+  th:nth-child(7), td:nth-child(7) { width: 24%; }
+  a { color: #000; text-decoration: none; }
+  .badge, .plat { background: none !important; border: none !important; padding: 0 !important; font-size: 10px; color: #000 !important; }
+  .td-company { font-weight: 600 !important; }
+  .td-notes, .td-role { white-space: normal; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  span[style*="opacity"] { opacity: 1 !important; color: #000 !important; }
+}
 </style>
 </head>
 <body>
@@ -125,7 +156,10 @@ footer a:hover{color:var(--text)}
     <option value="company">Company A–Z</option>
     <option value="status">Status</option>
     <option value="platform">Platform</option>
+    <option value="lastModified">Recently updated</option>
   </select>
+  <button onclick="exportCSV()" style="padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap;">⬇ Export CSV</button>
+  <button onclick="window.print()" style="padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap;">🖨 Print / PDF</button>
 </div>
 
 <div class="table-wrap">
@@ -184,7 +218,7 @@ footer a:hover{color:var(--text)}
 <div class="toast" id="toast"></div>
 
 <footer>
-  <a href="https://teokitten.github.io" target="_blank" rel="noopener">Built by Teo Moldovanu</a>
+  Built by <a href="https://teokitten.github.io" target="_blank" rel="noopener">Teo Moldovanu</a>
 </footer>
 
 <script>
@@ -203,14 +237,47 @@ let editId = null;
 
 function load() {
   const raw = localStorage.getItem(STORE_KEY);
-  if (raw) { try { jobs = JSON.parse(raw); return; } catch {} }
-  jobs = SEED.map((d, i) => ({
-    id: 'seed' + i,
-    company: d.c, title: d.t, location: d.l, workModel: d.w,
-    platform: d.p, url: d.u, status: d.s, notes: d.n,
-    dateAdded: d.d || null,
-  }));
-  persist();
+  if (raw) { try { jobs = JSON.parse(raw); } catch { jobs = []; } }
+  else {
+    jobs = SEED.map((d, i) => ({
+      id: 'seed' + i,
+      company: d.c, title: d.t, location: d.l, workModel: d.w,
+      platform: d.p, url: d.u, status: d.s, notes: d.n,
+      dateAdded: d.d || null,
+    }));
+    persist();
+  }
+  migrateMissingTimestamps();
+}
+
+function migrateMissingTimestamps() {
+  let changed = false;
+  jobs.forEach(j => {
+    if (!j.lastModified) {
+      j.lastModified = j.dateAdded
+        ? new Date(j.dateAdded).toISOString()
+        : new Date(0).toISOString();
+      changed = true;
+    }
+  });
+  if (changed) persist();
+}
+
+function exportCSV() {
+  const list = getList();
+  const headers = ['Company','Role','Location','Work Model','Platform','Status','URL','Date Added','Last Modified','Notes'];
+  const rows = list.map(j => [
+    j.company, j.title, j.location||'', j.workModel||'', j.platform||'',
+    j.status||'', j.url||'',
+    j.dateAdded||'',
+    j.lastModified ? j.lastModified.slice(0,10) : '',
+    (j.notes||'').replace(/\n/g,' ')
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = `job-applications-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
 }
 
 function persist() { localStorage.setItem(STORE_KEY, JSON.stringify(jobs)); }
@@ -233,6 +300,14 @@ function getList() {
     if (srt === 'company') return a.company.localeCompare(b.company);
     if (srt === 'status')  return (ORDER[a.status]??9) - (ORDER[b.status]??9);
     if (srt === 'platform') return (a.platform||'').localeCompare(b.platform||'');
+    if (srt === 'lastModified') {
+      const ma = a.lastModified ? new Date(a.lastModified) : (a.dateAdded ? new Date(a.dateAdded) : null);
+      const mb = b.lastModified ? new Date(b.lastModified) : (b.dateAdded ? new Date(b.dateAdded) : null);
+      if (!ma && !mb) return 0;
+      if (!ma) return 1;
+      if (!mb) return -1;
+      return mb - ma;
+    }
     const da = a.dateAdded ? new Date(a.dateAdded) : null;
     const db = b.dateAdded ? new Date(b.dateAdded) : null;
     if (!da && !db) return 0;
@@ -337,6 +412,7 @@ function saveJob() {
     url:       document.getElementById('fUrl').value.trim(),
     notes:     document.getElementById('fNotes').value.trim(),
     dateAdded: document.getElementById('fDate').value || null,
+    lastModified: new Date().toISOString(),
   };
   if (editId) {
     const i = jobs.findIndex(j => j.id === editId);
