@@ -190,7 +190,7 @@ footer a:hover{color:var(--text)}
     <span class="title">Job Tracker</span> <span id="hCount"></span>
   </h1>
   <button class="btn" id="clearSampleBtn" onclick="clearSampleJobs()" style="display:none">Clear sample jobs</button>
-  <button class="btn" onclick="downloadTracker()">↓ Download tracker</button>
+  <button class="btn" onclick="downloadTracker(event)" title="Click: your jobs only. Shift+click: include sample jobs too.">↓ Download tracker</button>
 </div>
 
 <div class="stats" id="stats"></div>
@@ -880,14 +880,17 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
-function downloadTracker() {
-  const inject = `<script>try{localStorage.setItem('${STORE_KEY}',${JSON.stringify(JSON.stringify(jobs))})}catch(e){}<\/script>`;
+function downloadTracker(e) {
+  const includeSamples = e && e.shiftKey;
+  const exportJobs = includeSamples ? jobs : jobs.filter(j => !j.id.startsWith('seed'));
+  const inject = `<script>try{localStorage.setItem('${STORE_KEY}',${JSON.stringify(JSON.stringify(exportJobs))})}catch(e){}<\/script>`;
   const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML.replace('</head>', inject + '</head>');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], {type: 'text/html'}));
   a.download = 'job-tracker.html';
   a.click();
   URL.revokeObjectURL(a.href);
+  toast(includeSamples ? 'Downloaded with sample jobs included.' : 'Downloaded — sample jobs excluded.');
 }
 
 load(); render();
