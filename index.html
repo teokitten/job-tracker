@@ -13,6 +13,7 @@
   --c-iw:#3fb950;--bg-iw:#1a3a1f;
   --c-rejected:#e5534b;--bg-rejected:#311c1c;
   --c-saved:#d29922;--bg-saved:#3a2e0e;
+  --c-offer:#a371f7;--bg-offer:#3a1d5c;
   --danger:#f85149;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
@@ -46,6 +47,7 @@ a.btn-icon:hover{background:var(--bg-applied);border-color:var(--c-applied);colo
 .stat-btn.active-Rejected{border-color:var(--c-rejected);color:var(--c-rejected)}
 .stat-btn.active-Saved{border-color:var(--c-saved);color:var(--c-saved)}
 .stat-btn.active-allApplied{border-color:var(--c-applied);color:var(--c-applied)}
+.stat-btn.active-Offer{border-color:var(--c-offer);color:var(--c-offer)}
 
 .toolbar{display:flex;gap:10px;padding:10px 24px;align-items:center;flex-wrap:wrap;position:sticky;top:103px;z-index:98;background:rgba(13,17,23,.98);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
 .search-wrap{position:relative;flex:1;min-width:200px}
@@ -56,7 +58,7 @@ a.btn-icon:hover{background:var(--bg-applied);border-color:var(--c-applied);colo
 .sort-select{padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;cursor:pointer}
 .sort-select:focus{outline:none;border-color:#58a6ff}
 
-.table-wrap{padding:0 24px 48px;overflow-x:auto}
+.table-wrap{padding:0 24px 0;overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:860px}
 thead th{text-align:left;padding:8px 10px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap}
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
@@ -81,6 +83,7 @@ span.plat:hover{color:var(--muted);border-color:var(--border)}
 .badge-Interviewing{background:var(--bg-iw);color:var(--c-iw)}
 .badge-Rejected{background:var(--bg-rejected);color:var(--c-rejected)}
 .badge-Saved{background:var(--bg-saved);color:var(--c-saved)}
+.badge-Offer{background:var(--bg-offer);color:var(--c-offer)}
 .status-select{
   border:none;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;
   padding-right:18px;
@@ -88,6 +91,27 @@ span.plat:hover{color:var(--muted);border-color:var(--border)}
   background-repeat:no-repeat;background-position:right 5px center;background-size:8px 5px;
   font-family:inherit;
 }
+.iw-toggle{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:2px 4px;border-radius:4px}
+.iw-toggle:hover{background:var(--surface2);color:var(--text)}
+.iw-chevron{display:inline-block;transition:transform .15s}
+.iw-chevron.open{transform:rotate(180deg)}
+.iw-expand-row td{background:var(--surface);padding:8px 10px;border-bottom:1px solid var(--border)}
+.iw-rounds-wrap{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;overflow-x:auto;padding-bottom:2px}
+.iw-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;font-size:11px;background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
+.iw-chip.upcoming{background:var(--bg-saved);color:var(--c-saved);border-color:transparent}
+.iw-chip-check{cursor:pointer;color:var(--c-iw);min-width:10px;display:inline-block}
+.iw-chip-link{color:inherit;text-decoration:none;opacity:.7}
+.iw-chip-link:hover{opacity:1}
+.iw-chip-edit{cursor:pointer;opacity:.6}
+.iw-chip-edit:hover{opacity:1}
+.iw-chip-del{cursor:pointer;opacity:.5;margin-left:2px}
+.iw-chip-del:hover{opacity:1;color:var(--danger)}
+.iw-chip.failed{background:var(--bg-rejected);color:var(--c-rejected);border-color:transparent}
+.iw-chip-icon-fail{color:var(--c-rejected);display:inline-block;min-width:10px}
+.iw-add-btn{padding:3px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;cursor:pointer}
+.iw-add-btn:hover{background:var(--border)}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer}
 .td-notes{max-width:220px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .td-notes.open{white-space:normal;overflow:visible}
 .td-date{color:var(--muted);font-size:12px;white-space:nowrap}
@@ -129,19 +153,19 @@ footer a:hover{color:var(--text)}
   }
   @page { size: A4 landscape; margin: 1.2cm; }
   .header, .stats, .toolbar, .btn-add, td:last-child, th:last-child,
-  .link-arrow, .btn-icon { display: none !important; }
+  .link-arrow, .btn-icon, .iw-toggle, .iw-expand-row,
+  th:nth-child(7), td:nth-child(7) { display: none !important; }
   body { background: #fff; color: #000; font-size: 11px; }
   .table-wrap { box-shadow: none; border: none; overflow: visible; }
   table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
   th, td { border: 1px solid #bbb; padding: 4px 6px; text-align: left; word-wrap: break-word; overflow: hidden; color: #000 !important; opacity: 1 !important; }
   th { background: #f0f0f0; font-weight: 600; }
-  th:nth-child(1), td:nth-child(1) { width: 12%; }
-  th:nth-child(2), td:nth-child(2) { width: 18%; }
-  th:nth-child(3), td:nth-child(3) { width: 14%; }
-  th:nth-child(4), td:nth-child(4) { width: 12%; }
-  th:nth-child(5), td:nth-child(5) { width: 10%; }
-  th:nth-child(6), td:nth-child(6) { width: 10%; }
-  th:nth-child(7), td:nth-child(7) { width: 24%; }
+  th:nth-child(1), td:nth-child(1) { width: 16%; }
+  th:nth-child(2), td:nth-child(2) { width: 24%; }
+  th:nth-child(3), td:nth-child(3) { width: 18%; }
+  th:nth-child(4), td:nth-child(4) { width: 14%; }
+  th:nth-child(5), td:nth-child(5) { width: 14%; }
+  th:nth-child(6), td:nth-child(6) { width: 14%; }
   a { color: #000; text-decoration: none; }
   .badge, .plat { background: none !important; border: none !important; padding: 0 !important; font-size: 10px; color: #000 !important; }
   .td-company { font-weight: 600 !important; }
@@ -165,6 +189,7 @@ footer a:hover{color:var(--text)}
     </svg>
     <span class="title">Job Tracker</span> <span id="hCount"></span>
   </h1>
+  <button class="btn" id="clearSampleBtn" onclick="clearSampleJobs()" style="display:none">Clear sample jobs</button>
   <button class="btn" onclick="downloadTracker()">↓ Download tracker</button>
 </div>
 
@@ -219,7 +244,7 @@ footer a:hover{color:var(--text)}
       <div class="row2">
         <div class="field"><label>Company *</label><input id="fCompany" type="text" placeholder="Anthropic" autocomplete="off"></div>
         <div class="field"><label>Status</label>
-          <select id="fStatus"><option>Applied</option><option>Interviewing</option><option>Rejected</option><option>Saved</option></select>
+          <select id="fStatus"><option>Applied</option><option>Interviewing</option><option>Offer</option><option>Rejected</option><option>Saved</option></select>
         </div>
       </div>
       <div class="field"><label>Job Title *</label><input id="fTitle" type="text" placeholder="Senior Technical Writer" autocomplete="off"></div>
@@ -243,6 +268,68 @@ footer a:hover{color:var(--text)}
   </div>
 </div>
 
+<div class="overlay" id="roundOverlay" onclick="if(event.target===this) closeRoundModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="roundModalTitle">Add Round</h2>
+      <button class="modal-x" onclick="closeRoundModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row2">
+        <div class="field"><label>Date</label><input id="fRoundDate" type="date"></div>
+        <div class="field"><label>Time</label>
+          <div style="display:flex;gap:6px">
+            <select id="fRoundHour" style="flex:1">
+              <option value="00">00</option><option value="01">01</option><option value="02">02</option>
+              <option value="03">03</option><option value="04">04</option><option value="05">05</option>
+              <option value="06">06</option><option value="07">07</option><option value="08">08</option>
+              <option value="09">09</option><option value="10">10</option><option value="11">11</option>
+              <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+              <option value="15">15</option><option value="16">16</option><option value="17">17</option>
+              <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+              <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+            </select>
+            <select id="fRoundMin" style="flex:1">
+              <option value="00">00</option>
+              <option value="15">15</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Interview Type</label>
+          <input id="fRoundType" type="text" placeholder="Technical, Phone screen, Onsite…" list="roundTypeList">
+          <datalist id="roundTypeList">
+            <option value="Online">
+            <option value="Phone screen">
+            <option value="Technical">
+            <option value="Onsite">
+            <option value="Final round">
+            <option value="HR / Culture fit">
+          </datalist>
+        </div>
+        <div class="field" id="fRoundLinkField"><label>Meeting Link</label><input id="fRoundLink" type="url" placeholder="https://…"></div>
+      </div>
+      <div class="field"><label>Attendees</label><input id="fRoundAttendees" type="text" placeholder="Names or roles"></div>
+      <div class="field"><label>Notes</label><textarea id="fRoundNotes" placeholder="Context, prep notes…"></textarea></div>
+      <div class="field"><label>Outcome</label>
+        <select id="fRoundOutcome">
+          <option value="">Not yet decided</option>
+          <option value="passed">Passed</option>
+          <option value="failed">Failed (sets job status to Rejected)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="roundDeleteBtn" onclick="deleteRoundFromModal()" style="display:none;margin-right:auto;color:var(--danger);border-color:var(--danger)">Delete round</button>
+      <button class="btn" onclick="closeRoundModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRound()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <footer>
@@ -251,12 +338,19 @@ footer a:hover{color:var(--text)}
 
 <script>
 const STORE_KEY = 'jt_blank_v5';
-const STATUSES = ['Applied','Interviewing','Rejected','Saved'];
+const STATUSES = ['Applied','Interviewing','Offer','Rejected','Saved'];
 
 const SEED = [
   {c:'Acme Corp',t:'Senior Technical Writer',l:'Berlin',w:'Remote',p:'LinkedIn',u:'https://example.com/jobs/acme-tw',s:'Applied',n:'Good culture fit. Recruiter mentioned a second interview within two weeks.',d:'2026-06-07'},
-  {c:'Globex Inc',t:'UX Writer',l:'Vienna',w:'Hybrid',p:'Karriere.at',u:'',s:'Rejected',n:'Received rejection email three days after applying. No feedback given.',d:'2026-05-29'},
-  {c:'Initech',t:'Content Strategist',l:'Amsterdam',w:'On-site',p:'Indeed',u:'https://example.com/jobs/initech-cs',s:'Interviewing',n:'First interview done on 05 Jun. Second round scheduled for 18 Jun with the hiring manager.',d:'2026-06-03'},
+  {c:'Globex Inc',t:'UX Writer',l:'Vienna',w:'Hybrid',p:'Karriere.at',u:'',s:'Rejected',n:'Rejected after the phone screening – turned out to be a mismatch in expectations on both sides (compensation and scope).',d:'2026-05-29',
+    ir:[
+      {id:'seed-r1',datetime:'2026-06-05T14:00',type:'Online',link:'https://meet.google.com/globex-r1',attendees:'Sandra Huber (HR)',notes:'Phone screening with HR. Discussed role scope, salary expectations and availability.',outcome:'failed',done:true},
+    ]},
+  {c:'Initech',t:'Content Strategist',l:'Amsterdam',w:'On-site',p:'Indeed',u:'https://example.com/jobs/initech-cs',s:'Interviewing',n:'First interview done on 20 Jun. Second round scheduled for 15 Jul with the hiring manager.',d:'2026-06-03',
+    ir:[
+      {id:'seed-r2',datetime:'2026-06-20T10:00',type:'Online',link:'https://meet.google.com/initech-r1',attendees:'Marc de Groot (Hiring Manager)',notes:'Phone/video screen. Discussed content strategy background.',outcome:'passed',done:true},
+      {id:'seed-r3',datetime:'2026-07-15T11:00',type:'Technical',link:'',attendees:'Marc de Groot (Hiring Manager), Els Bakker (Content Lead)',notes:'Prep: review portfolio pieces on docs-as-code migration.',done:false},
+    ]},
   {c:'Brightline Technologies',t:'Technical Writer',l:'Prague · Remote',w:'Hybrid',p:'LinkedIn',u:'https://example.com/jobs/brightline-tw',s:'Saved',n:'Strong match – they mention docs-as-code and API documentation experience as key requirements.',d:'2026-06-14'},
 ];
 
@@ -315,6 +409,9 @@ function initAllAutocomplete() {
 let jobs = [];
 let filter = 'all';
 let editId = null;
+let expandedInterviews = new Set();
+let roundEditJobId = null;
+let roundEditId = null;
 
 function load() {
   const raw = localStorage.getItem(STORE_KEY);
@@ -325,6 +422,7 @@ function load() {
       company: d.c, title: d.t, location: d.l, workModel: d.w,
       platform: d.p, url: d.u, status: d.s, notes: d.n,
       dateAdded: d.d || null,
+      interviewRounds: d.ir || [],
     }));
     persist();
   }
@@ -417,13 +515,23 @@ function importCSV(event) {
 
 function persist() { localStorage.setItem(STORE_KEY, JSON.stringify(jobs)); }
 
+function clearSampleJobs() {
+  const sampleCount = jobs.filter(j => j.id.startsWith('seed')).length;
+  if (!sampleCount) return;
+  if (!confirm(`Remove ${sampleCount} sample job${sampleCount > 1 ? 's' : ''}? This can't be undone.`)) return;
+  jobs = jobs.filter(j => !j.id.startsWith('seed'));
+  persist();
+  render();
+  toast('Sample jobs removed.');
+}
+
 function getList() {
   const q = (document.getElementById('searchInput').value || '').toLowerCase();
   const srt = document.getElementById('sortSelect').value;
-  const ORDER = {Applied:0,Interviewing:1,Saved:2,Rejected:3};
+  const ORDER = {Applied:0,Interviewing:1,Saved:2,Rejected:3,Offer:4};
 
   let list = jobs.filter(j => {
-    if (filter === 'allApplied') return ['Applied','Interviewing','Rejected'].includes(j.status);
+    if (filter === 'allApplied') return ['Applied','Interviewing','Offer','Rejected'].includes(j.status);
     if (filter !== 'all' && j.status !== filter) return false;
     if (q) {
       const hay = [j.company,j.title,j.platform,j.location,j.notes].join(' ').toLowerCase();
@@ -459,10 +567,10 @@ function render() {
   const tbody = document.getElementById('tbody');
   const empty = document.getElementById('empty');
 
-  const counts = {Applied:0,Interviewing:0,Rejected:0,Saved:0};
+  const counts = {Applied:0,Interviewing:0,Offer:0,Rejected:0,Saved:0};
   jobs.forEach(j => { if (counts[j.status]!==undefined) counts[j.status]++; });
   const total = jobs.length;
-  const allAppliedCount = counts.Applied + counts.Interviewing + counts.Rejected;
+  const allAppliedCount = counts.Applied + counts.Interviewing + counts.Offer + counts.Rejected;
   const fDefs = [
     {key:'all',label:'All',count:total},
     ...STATUSES.map(s=>({key:s,label:s,count:counts[s]})),
@@ -475,6 +583,7 @@ function render() {
   ).join('');
 
   document.getElementById('hCount').textContent = `— ${total} entries`;
+  document.getElementById('clearSampleBtn').style.display = jobs.some(j => j.id.startsWith('seed')) ? '' : 'none';
 
   if (!list.length) { tbody.innerHTML=''; empty.classList.add('show'); return; }
   empty.classList.remove('show');
@@ -487,9 +596,14 @@ function render() {
       <td class="td-role" title="${x(j.title)}">${x(j.title)}</td>
       <td class="td-loc">${x(loc)}</td>
       <td>${j.url ? `<a href="${x(j.url)}" target="_blank" rel="noopener" class="plat-link" title="Open listing">${x(j.platform||'Link')} ↗</a>` : `<span style="color:var(--muted);font-size:12px">${x(j.platform||'')}</span>`}</td>
-      <td><select class="status-select badge badge-${x(j.status)}" onchange="updateStatus('${j.id}', this.value)">
-        ${STATUSES.map(s => `<option value="${s}"${s === j.status ? ' selected' : ''}>${s}</option>`).join('')}
-      </select></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <select class="status-select badge badge-${x(j.status)}" onchange="updateStatus('${j.id}', this.value)">
+            ${STATUSES.map(s => `<option value="${s}"${s === j.status ? ' selected' : ''}>${s}</option>`).join('')}
+          </select>
+          ${interviewSummaryHtml(j)}
+        </div>
+      </td>
       <td class="td-date">${j.dateAdded ? fmtDate(j.dateAdded) : '—'}</td>
       <td class="td-notes" onclick="this.classList.toggle('open')" title="${x(j.notes||'')}">
         ${j.notes ? x(j.notes) : '<span style="opacity:.4">—</span>'}
@@ -498,11 +612,187 @@ function render() {
         <button class="btn-icon" title="Edit" onclick="editJob('${j.id}')">✎</button>
         <button class="btn-icon del" title="Delete" onclick="delJob('${j.id}')">✕</button>
       </td>
-    </tr>`;
+    </tr>` + ((j.interviewRounds && j.interviewRounds.length && expandedInterviews.has(j.id)) ? renderInterviewExpandRow(j) : '');
   }).join('');
 }
 
 function setFilter(f) { filter = f; render(); }
+
+function isRoundDone(r) {
+  if (r.outcome === 'passed' || r.outcome === 'failed') return true;
+  if (typeof r.done === 'boolean') return r.done;
+  return false;
+}
+
+function setRoundOutcome(jobId, roundId, outcome) {
+  const job = jobs.find(j => j.id === jobId);
+  if (!job) return;
+  const round = (job.interviewRounds || []).find(r => r.id === roundId);
+  if (!round) return;
+  const turningOn = round.outcome !== outcome;
+  round.outcome = turningOn ? outcome : null;
+  round.done = turningOn ? true : null;
+  job.lastModified = new Date().toISOString();
+  persist();
+  render();
+}
+
+function interviewSummaryHtml(j) {
+  const rounds = j.interviewRounds || [];
+  if (!rounds.length) {
+    if (j.status !== 'Interviewing') return '';
+    return `<button class="iw-toggle" onclick="openRoundModal('${j.id}', null)">+ interview date</button>`;
+  }
+  const now = new Date();
+  const nextUpcoming = rounds.filter(r => !isRoundDone(r) && new Date(r.datetime) >= now)
+    .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))[0];
+  const label = (j.status === 'Interviewing' && nextUpcoming)
+    ? fmtRoundDate(nextUpcoming.datetime)
+    : `${rounds.length} round${rounds.length > 1 ? 's' : ''}`;
+  const open = expandedInterviews.has(j.id);
+  return `<button class="iw-toggle" onclick="toggleInterview('${j.id}')" title="Interview rounds">
+    <span class="iw-chevron${open ? ' open' : ''}">&#9662;</span> ${label}
+  </button>`;
+}
+
+function renderInterviewExpandRow(j) {
+  const rounds = (j.interviewRounds || []).slice().sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+  const hasFailed = rounds.some(r => r.outcome === 'failed');
+  const lockAdd = j.status === 'Offer' || (hasFailed && j.status === 'Rejected');
+  const chips = rounds.map((r, i) => {
+    const failed = r.outcome === 'failed';
+    const done = isRoundDone(r);
+    const outcomeClass = failed ? 'failed' : (done ? 'done' : 'upcoming');
+    const leadIcon = failed
+      ? `<span class="iw-chip-icon-fail" title="Failed">&#10007;</span>`
+      : `<span class="iw-chip-check" onclick="setRoundOutcome('${j.id}','${r.id}','passed')" title="${done ? 'Clear passed status' : 'Mark as Passed'}">${done ? '&#10003;' : ''}</span>`;
+    const parts = [`Round ${i + 1} &middot; ${fmtRoundDate(r.datetime)}`];
+    if (r.type) parts.push(x(r.type));
+    return `<span class="iw-chip ${outcomeClass}">
+      ${leadIcon}
+      <span${done ? ' style="text-decoration:line-through"' : ''}>${parts.join(' &middot; ')}</span>
+      ${r.link ? `<a href="${x(r.link)}" target="_blank" rel="noopener" class="iw-chip-link" title="Meeting link">&#128279;</a>` : ''}
+      <span class="iw-chip-edit" onclick="openRoundModal('${j.id}','${r.id}')" title="Edit">&#9998;</span>
+    </span>`;
+  }).join('');
+  return `<tr class="iw-expand-row">
+    <td colspan="4"></td>
+    <td colspan="4">
+      <div class="iw-rounds-wrap">
+        ${chips}
+        ${lockAdd ? '' : `<button class="iw-add-btn" onclick="openRoundModal('${j.id}', null)">+ Add round</button>`}
+      </div>
+    </td>
+  </tr>`;
+}
+
+function toggleInterview(id) {
+  if (expandedInterviews.has(id)) expandedInterviews.delete(id);
+  else expandedInterviews.add(id);
+  render();
+}
+
+function removeRound(jobId, roundId) {
+  const job = jobs.find(j => j.id === jobId);
+  if (!job || !job.interviewRounds) return false;
+  if (!confirm('Remove this round?')) return false;
+  job.interviewRounds = job.interviewRounds.filter(r => r.id !== roundId);
+  job.lastModified = new Date().toISOString();
+  persist();
+  render();
+  return true;
+}
+
+function fmtRoundDate(dtStr) {
+  const d = new Date(dtStr);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' &middot; ' +
+    d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function updateRoundLinkVisibility() {
+  const typeVal = (document.getElementById('fRoundType').value || '').trim().toLowerCase();
+  const wrap = document.getElementById('fRoundLinkField');
+  if (wrap) wrap.style.display = (typeVal === 'online') ? '' : 'none';
+}
+
+function openRoundModal(jobId, roundId) {
+  roundEditJobId = jobId;
+  roundEditId = roundId || null;
+  document.getElementById('roundModalTitle').textContent = roundId ? 'Edit Round' : 'Add Round';
+  const job = jobs.find(j => j.id === jobId);
+  const r = (roundId && job) ? (job.interviewRounds || []).find(rr => rr.id === roundId) : null;
+  if (r) {
+    const dt = new Date(r.datetime);
+    document.getElementById('fRoundDate').value = dt.toISOString().slice(0, 10);
+    document.getElementById('fRoundHour').value = String(dt.getHours()).padStart(2, '0');
+    document.getElementById('fRoundMin').value = String(Math.floor(dt.getMinutes() / 15) * 15).padStart(2, '0');
+    document.getElementById('fRoundType').value = r.type || '';
+    document.getElementById('fRoundLink').value = r.link || '';
+    updateRoundLinkVisibility();
+    document.getElementById('fRoundAttendees').value = r.attendees || '';
+    document.getElementById('fRoundNotes').value = r.notes || '';
+    document.getElementById('fRoundOutcome').value = r.outcome || '';
+  } else {
+    const now = new Date();
+    document.getElementById('fRoundDate').value = now.toISOString().slice(0, 10);
+    document.getElementById('fRoundHour').value = '09';
+    document.getElementById('fRoundMin').value = '00';
+    document.getElementById('fRoundType').value = '';
+    document.getElementById('fRoundLink').value = '';
+    updateRoundLinkVisibility();
+    document.getElementById('fRoundAttendees').value = '';
+    document.getElementById('fRoundNotes').value = '';
+    document.getElementById('fRoundOutcome').value = '';
+  }
+  document.getElementById('roundDeleteBtn').style.display = roundId ? '' : 'none';
+  document.getElementById('roundOverlay').classList.add('open');
+}
+
+function closeRoundModal() {
+  document.getElementById('roundOverlay').classList.remove('open');
+  roundEditJobId = null;
+  roundEditId = null;
+}
+
+function deleteRoundFromModal() {
+  if (!roundEditJobId || !roundEditId) return;
+  if (removeRound(roundEditJobId, roundEditId)) closeRoundModal();
+}
+
+function saveRound() {
+  const job = jobs.find(j => j.id === roundEditJobId);
+  if (!job) return;
+  const date = document.getElementById('fRoundDate').value;
+  if (!date) { toast('Pick a date.'); return; }
+  const hour = document.getElementById('fRoundHour').value;
+  const min = document.getElementById('fRoundMin').value;
+  const outcome = document.getElementById('fRoundOutcome').value || null;
+  const typeVal = document.getElementById('fRoundType').value.trim();
+  const isOnline = typeVal.toLowerCase() === 'online';
+  const data = {
+    datetime: `${date}T${hour}:${min}`,
+    type: typeVal,
+    link: isOnline ? document.getElementById('fRoundLink').value.trim() : '',
+    attendees: document.getElementById('fRoundAttendees').value.trim(),
+    notes: document.getElementById('fRoundNotes').value.trim(),
+    outcome,
+    done: outcome ? true : null,
+  };
+  if (!job.interviewRounds) job.interviewRounds = [];
+  if (roundEditId) {
+    const i = job.interviewRounds.findIndex(r => r.id === roundEditId);
+    if (i !== -1) job.interviewRounds[i] = { ...job.interviewRounds[i], ...data };
+  } else {
+    job.interviewRounds.push({ id: 'r' + Date.now(), ...data });
+  }
+  if (outcome === 'failed') job.status = 'Rejected';
+  job.lastModified = new Date().toISOString();
+  persist();
+  expandedInterviews.add(roundEditJobId);
+  closeRoundModal();
+  render();
+  toast(outcome === 'failed' ? 'Round marked failed. Job status set to Rejected.' : 'Round saved.');
+}
 
 function fmtDate(d) {
   const dt = new Date(d + 'T00:00:00');
@@ -603,13 +893,15 @@ function downloadTracker() {
 load(); render();
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') { closeModal(); closeRoundModal(); }
   if ((e.metaKey||e.ctrlKey) && e.key === 'k') {
     e.preventDefault();
     document.getElementById('searchInput').focus();
     document.getElementById('searchInput').select();
   }
 });
+
+document.getElementById('fRoundType').addEventListener('input', updateRoundLinkVisibility);
 </script>
 </body>
 </html>
