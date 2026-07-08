@@ -45,6 +45,7 @@ a.btn-icon:hover{background:var(--bg-applied);border-color:var(--c-applied);colo
 .stat-btn.active-Interviewing{border-color:var(--c-iw);color:var(--c-iw)}
 .stat-btn.active-Rejected{border-color:var(--c-rejected);color:var(--c-rejected)}
 .stat-btn.active-Saved{border-color:var(--c-saved);color:var(--c-saved)}
+.stat-btn.active-allApplied{border-color:var(--c-applied);color:var(--c-applied)}
 
 .toolbar{display:flex;gap:10px;padding:10px 24px;align-items:center;flex-wrap:wrap;position:sticky;top:103px;z-index:98;background:rgba(13,17,23,.98);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
 .search-wrap{position:relative;flex:1;min-width:200px}
@@ -73,11 +74,20 @@ a.plat:hover{border-color:var(--c-applied);color:var(--c-applied)}
 span.plat{cursor:default}
 span.plat:hover{color:var(--muted);border-color:var(--border)}
 .plat-dot{font-size:10px;color:var(--c-applied);margin-left:3px;opacity:0.7}
+.plat-link{color:var(--c-applied);text-decoration:none;font-size:12px;font-weight:500;}
+.plat-link:hover{text-decoration:underline;}
 .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap}
 .badge-Applied{background:var(--bg-applied);color:var(--c-applied)}
 .badge-Interviewing{background:var(--bg-iw);color:var(--c-iw)}
 .badge-Rejected{background:var(--bg-rejected);color:var(--c-rejected)}
 .badge-Saved{background:var(--bg-saved);color:var(--c-saved)}
+.status-select{
+  border:none;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;
+  padding-right:18px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b949e'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 5px center;background-size:8px 5px;
+  font-family:inherit;
+}
 .td-notes{max-width:220px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .td-notes.open{white-space:normal;overflow:visible}
 .td-date{color:var(--muted);font-size:12px;white-space:nowrap}
@@ -175,6 +185,8 @@ footer a:hover{color:var(--text)}
   </select>
   <button class="btn btn-primary" onclick="openModal()" style="white-space:nowrap;">+ Add Job</button>
   <button onclick="exportCSV()" style="padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap;">⬇ Export CSV</button>
+  <button onclick="document.getElementById('importInput').click()" style="padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap;">⬆ Import CSV</button>
+  <input type="file" id="importInput" accept=".csv" style="display:none" onchange="importCSV(event)">
   <button onclick="window.print()" style="padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap;">🖨 Print / PDF</button>
 </div>
 
@@ -205,20 +217,20 @@ footer a:hover{color:var(--text)}
     </div>
     <div class="modal-body">
       <div class="row2">
-        <div class="field"><label>Company *</label><input id="fCompany" type="text" placeholder="Anthropic"></div>
+        <div class="field"><label>Company *</label><input id="fCompany" type="text" placeholder="Anthropic" autocomplete="off"></div>
         <div class="field"><label>Status</label>
           <select id="fStatus"><option>Applied</option><option>Interviewing</option><option>Rejected</option><option>Saved</option></select>
         </div>
       </div>
-      <div class="field"><label>Job Title *</label><input id="fTitle" type="text" placeholder="Senior Technical Writer"></div>
+      <div class="field"><label>Job Title *</label><input id="fTitle" type="text" placeholder="Senior Technical Writer" autocomplete="off"></div>
       <div class="row2">
-        <div class="field"><label>Location</label><input id="fLocation" type="text" placeholder="Vienna, Austria"></div>
+        <div class="field"><label>Location</label><input id="fLocation" type="text" placeholder="Vienna, Austria" autocomplete="off"></div>
         <div class="field"><label>Work Model</label>
           <select id="fWorkModel"><option>Remote</option><option>Hybrid</option><option>On-site</option><option value="">Unknown</option></select>
         </div>
       </div>
       <div class="row2">
-        <div class="field"><label>Platform / Source</label><input id="fPlatform" type="text" placeholder="LinkedIn"></div>
+        <div class="field"><label>Platform / Source</label><input id="fPlatform" type="text" placeholder="LinkedIn" autocomplete="off"></div>
         <div class="field"><label>Date Applied</label><input id="fDate" type="date"></div>
       </div>
       <div class="field"><label>URL</label><input id="fUrl" type="url" placeholder="https://..."></div>
@@ -247,6 +259,58 @@ const SEED = [
   {c:'Initech',t:'Content Strategist',l:'Amsterdam',w:'On-site',p:'Indeed',u:'https://example.com/jobs/initech-cs',s:'Interviewing',n:'First interview done on 05 Jun. Second round scheduled for 18 Jun with the hiring manager.',d:'2026-06-03'},
   {c:'Brightline Technologies',t:'Technical Writer',l:'Prague · Remote',w:'Hybrid',p:'LinkedIn',u:'https://example.com/jobs/brightline-tw',s:'Saved',n:'Strong match – they mention docs-as-code and API documentation experience as key requirements.',d:'2026-06-14'},
 ];
+
+const PLATFORM_BASE = [
+  'Indeed', 'LinkedIn', 'Glassdoor', 'Karriere.at', 'Stepstone',
+  'Xing', 'Monster', 'AMS', 'Company Website'
+];
+
+function getSuggestions(field) {
+  if (field === 'platform') {
+    const fromTracker = jobs.map(j => j.platform).filter(Boolean);
+    return [...new Set([...PLATFORM_BASE, ...fromTracker])];
+  }
+  if (field === 'location') return [...new Set(jobs.map(j => j.location).filter(Boolean))];
+  if (field === 'company') return [...new Set(jobs.map(j => j.company).filter(Boolean))];
+  if (field === 'title') return [...new Set(jobs.map(j => j.title).filter(Boolean))];
+  return [];
+}
+
+function typeahead(inputId, field) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.addEventListener('input', e => {
+    const val = input.value;
+    if (!val) return;
+    if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') return;
+    const match = getSuggestions(field).find(s =>
+      s.toLowerCase().startsWith(val.toLowerCase()) && s.toLowerCase() !== val.toLowerCase()
+    );
+    if (match) {
+      input.value = match;
+      input.setSelectionRange(val.length, match.length);
+    }
+  });
+  input.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === 'Tab') && input.selectionStart < input.value.length) {
+      e.preventDefault();
+      const accepted = input.value;
+      input.value = accepted;
+      input.setSelectionRange(accepted.length, accepted.length);
+    } else if (e.key === 'Escape') {
+      const pos = input.selectionStart;
+      input.value = input.value.substring(0, pos);
+      input.setSelectionRange(pos, pos);
+    }
+  });
+}
+
+function initAllAutocomplete() {
+  typeahead('fPlatform', 'platform');
+  typeahead('fLocation', 'location');
+  typeahead('fCompany', 'company');
+  typeahead('fTitle', 'title');
+}
 
 let jobs = [];
 let filter = 'all';
@@ -297,6 +361,60 @@ function exportCSV() {
   a.click();
 }
 
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) { toast('CSV appears empty.'); return; }
+    const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim().toLowerCase());
+    const idx = {
+      company: headers.indexOf('company'), title: headers.indexOf('role'),
+      location: headers.indexOf('location'), workModel: headers.indexOf('work model'),
+      platform: headers.indexOf('platform'), status: headers.indexOf('status'),
+      url: headers.indexOf('url'), dateAdded: headers.indexOf('date added'),
+      notes: headers.indexOf('notes'),
+    };
+    const parseRow = line => {
+      const cols = []; let cur = ''; let inQ = false;
+      for (const ch of line) {
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { cols.push(cur); cur = ''; }
+        else { cur += ch; }
+      }
+      cols.push(cur);
+      return cols.map(c => c.trim());
+    };
+    let added = 0;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseRow(lines[i]);
+      const company = idx.company >= 0 ? cols[idx.company] : '';
+      const title = idx.title >= 0 ? cols[idx.title] : '';
+      if (!company && !title) continue;
+      const statusRaw = idx.status >= 0 ? cols[idx.status] : '';
+      const status = STATUSES.includes(statusRaw) ? statusRaw : 'Applied';
+      jobs.push({
+        id: 'imp' + Date.now() + i,
+        company, title,
+        location: idx.location >= 0 ? cols[idx.location] : '',
+        workModel: idx.workModel >= 0 ? cols[idx.workModel] : '',
+        platform: idx.platform >= 0 ? cols[idx.platform] : '',
+        status,
+        url: idx.url >= 0 ? cols[idx.url] : '',
+        dateAdded: idx.dateAdded >= 0 ? cols[idx.dateAdded] : '',
+        notes: idx.notes >= 0 ? cols[idx.notes] : '',
+        lastModified: new Date().toISOString(),
+      });
+      added++;
+    }
+    persist(); render();
+    toast(`Imported ${added} job${added !== 1 ? 's' : ''}.`);
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 function persist() { localStorage.setItem(STORE_KEY, JSON.stringify(jobs)); }
 
 function getList() {
@@ -305,6 +423,7 @@ function getList() {
   const ORDER = {Applied:0,Interviewing:1,Saved:2,Rejected:3};
 
   let list = jobs.filter(j => {
+    if (filter === 'allApplied') return ['Applied','Interviewing','Rejected'].includes(j.status);
     if (filter !== 'all' && j.status !== filter) return false;
     if (q) {
       const hay = [j.company,j.title,j.platform,j.location,j.notes].join(' ').toLowerCase();
@@ -343,9 +462,11 @@ function render() {
   const counts = {Applied:0,Interviewing:0,Rejected:0,Saved:0};
   jobs.forEach(j => { if (counts[j.status]!==undefined) counts[j.status]++; });
   const total = jobs.length;
+  const allAppliedCount = counts.Applied + counts.Interviewing + counts.Rejected;
   const fDefs = [
     {key:'all',label:'All',count:total},
-    ...STATUSES.map(s=>({key:s,label:s,count:counts[s]}))
+    ...STATUSES.map(s=>({key:s,label:s,count:counts[s]})),
+    {key:'allApplied',label:'All Applications',count:allAppliedCount},
   ];
   document.getElementById('stats').innerHTML = fDefs.map(f =>
     `<button class="stat-btn${filter===f.key?' active-'+f.key:''}" onclick="setFilter('${f.key}')">
@@ -359,16 +480,16 @@ function render() {
   empty.classList.remove('show');
 
   tbody.innerHTML = list.map(j => {
-    const name = j.url
-      ? `<a href="${x(j.url)}" target="_blank" rel="noopener">${x(j.company)}</a>`
-      : x(j.company);
+    const name = x(j.company);
     const loc = [j.location, j.workModel].filter(Boolean).join(' · ');
     return `<tr>
       <td class="td-company">${name}</td>
       <td class="td-role" title="${x(j.title)}">${x(j.title)}</td>
       <td class="td-loc">${x(loc)}</td>
-      <td>${j.url ? `<a class="plat" href="${x(j.url)}" target="_blank" rel="noopener" title="Open listing">${x(j.platform||'')}</a><span class="plat-dot">↗</span>` : `<span class="plat">${x(j.platform||'')}</span>`}</td>
-      <td><span class="badge badge-${x(j.status)}">${x(j.status)}</span></td>
+      <td>${j.url ? `<a href="${x(j.url)}" target="_blank" rel="noopener" class="plat-link" title="Open listing">${x(j.platform||'Link')} ↗</a>` : `<span style="color:var(--muted);font-size:12px">${x(j.platform||'')}</span>`}</td>
+      <td><select class="status-select badge badge-${x(j.status)}" onchange="updateStatus('${j.id}', this.value)">
+        ${STATUSES.map(s => `<option value="${s}"${s === j.status ? ' selected' : ''}>${s}</option>`).join('')}
+      </select></td>
       <td class="td-date">${j.dateAdded ? fmtDate(j.dateAdded) : '—'}</td>
       <td class="td-notes" onclick="this.classList.toggle('open')" title="${x(j.notes||'')}">
         ${j.notes ? x(j.notes) : '<span style="opacity:.4">—</span>'}
@@ -410,6 +531,7 @@ function openModal(id) {
   }
   document.getElementById('overlay').classList.add('open');
   document.getElementById('fCompany').focus();
+  setTimeout(initAllAutocomplete, 0);
 }
 
 function setF(id, val) { document.getElementById(id).value = val; }
@@ -448,6 +570,16 @@ function delJob(id) {
   if (!confirm('Delete this entry?')) return;
   jobs = jobs.filter(j => j.id !== id);
   persist(); render(); toast('Deleted.');
+}
+
+function updateStatus(id, newStatus) {
+  const job = jobs.find(j => j.id === id);
+  if (!job) return;
+  job.status = newStatus;
+  job.lastModified = new Date().toISOString();
+  persist();
+  render();
+  toast('Status updated.');
 }
 
 let toastTimer;
