@@ -78,12 +78,16 @@ span.plat:hover{color:var(--muted);border-color:var(--border)}
 .plat-dot{font-size:10px;color:var(--c-applied);margin-left:3px;opacity:0.7}
 .plat-link{color:var(--c-applied);text-decoration:none;font-size:12px;font-weight:500;}
 .plat-link:hover{text-decoration:underline;}
+.listing-closed{display:inline-block;margin-left:4px;font-size:10px;color:var(--muted);opacity:.35;cursor:pointer;vertical-align:middle}
+.listing-closed:hover{opacity:.85}
+.listing-closed.active{opacity:1;color:var(--c-rejected)}
 .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap}
 .badge-Applied{background:var(--bg-applied);color:var(--c-applied)}
 .badge-Interviewing{background:var(--bg-iw);color:var(--c-iw)}
 .badge-Rejected{background:var(--bg-rejected);color:var(--c-rejected)}
 .badge-Saved{background:var(--bg-saved);color:var(--c-saved)}
 .badge-Offer{background:var(--bg-offer);color:var(--c-offer)}
+.badge-Dropped{background:#3a1c2e;color:#f778ba}
 .status-select{
   border:none;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;
   padding-right:18px;
@@ -153,7 +157,7 @@ footer a:hover{color:var(--text)}
   }
   @page { size: A4 landscape; margin: 1.2cm; }
   .header, .stats, .toolbar, .btn-add, td:last-child, th:last-child,
-  .link-arrow, .btn-icon, .iw-toggle, .iw-expand-row,
+  .link-arrow, .btn-icon, .iw-toggle, .iw-expand-row, .listing-closed,
   th:nth-child(7), td:nth-child(7) { display: none !important; }
   body { background: #fff; color: #000; font-size: 11px; }
   .table-wrap { box-shadow: none; border: none; overflow: visible; }
@@ -199,6 +203,13 @@ footer a:hover{color:var(--text)}
   <div class="search-wrap">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input class="search-input" id="searchInput" type="text" placeholder="Search company, role, notes… (Ctrl+K)" oninput="render()">
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2)">
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap">From</span>
+    <input type="date" id="dateFrom" title="Only show jobs added on or after this date" onchange="render()" style="background:transparent;border:none;color:var(--text);font:inherit;font-size:12px;max-width:120px">
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap">To</span>
+    <input type="date" id="dateTo" title="Only show jobs added on or before this date" onchange="render()" style="background:transparent;border:none;color:var(--text);font:inherit;font-size:12px;max-width:120px">
+    <button type="button" onclick="clearDateRange()" title="Clear date range" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
   </div>
   <select class="sort-select" id="sortSelect" onchange="render()">
     <option value="dateDesc">Date (newest first)</option>
@@ -259,7 +270,16 @@ footer a:hover{color:var(--text)}
         <div class="field"><label>Date Applied</label><input id="fDate" type="date"></div>
       </div>
       <div class="field"><label>URL</label><input id="fUrl" type="url" placeholder="https://..."></div>
-      <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Context, contacts, follow-ups…"></textarea></div>
+      <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Add a note (e.g. context, contacts, follow-ups)…"></textarea></div>
+      <div class="field">
+        <label>Screenshots</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" class="btn" onclick="document.getElementById('attachInput').click()" style="padding:5px 10px;font-size:12px">📎 Attach</button>
+          <input type="file" id="attachInput" accept="image/*" multiple style="display:none" onchange="handleAttachFiles(event)">
+          <input type="file" id="notesAttachInput" accept="image/*" multiple style="display:none" onchange="handleNotesAttachFiles(event)">
+        </div>
+        <div id="attachGallery" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn" onclick="closeModal()">Cancel</button>
@@ -321,6 +341,14 @@ footer a:hover{color:var(--text)}
           <option value="failed">Failed (sets job status to Rejected)</option>
         </select>
       </div>
+      <div class="field">
+        <label>Screenshots</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" class="btn" onclick="document.getElementById('roundAttachInput').click()" style="padding:5px 10px;font-size:12px">📎 Attach</button>
+          <input type="file" id="roundAttachInput" accept="image/*" multiple style="display:none" onchange="handleRoundAttachFiles(event)">
+        </div>
+        <div id="roundAttachGallery" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn" id="roundDeleteBtn" onclick="deleteRoundFromModal()" style="display:none;margin-right:auto;color:var(--danger);border-color:var(--danger)">Delete round</button>
@@ -328,6 +356,34 @@ footer a:hover{color:var(--text)}
       <button class="btn btn-primary" onclick="saveRound()">Save</button>
     </div>
   </div>
+</div>
+
+<div class="overlay" id="dropReasonOverlay" onclick="if(event.target===this) dropReasonCancel()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <h2>Reason for Dropping</h2>
+      <button class="modal-x" onclick="dropReasonCancel()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin:0;line-height:1.6;font-size:13px;color:var(--muted)">Why are you dropping this application?</p>
+      <div class="field">
+        <textarea id="dropReasonInput" rows="3" placeholder="Recruiter said the role requires full-time onsite presence in a location I can't relocate to."></textarea>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <button type="button" class="btn" onclick="document.getElementById('dropAttachInput').click()" style="padding:5px 10px;font-size:12px">📎 Attach</button>
+        <input type="file" id="dropAttachInput" accept="image/*" multiple style="display:none" onchange="handleDropAttachFiles(event)">
+      </div>
+      <div id="dropAttachGallery" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="dropReasonCancel()">Cancel</button>
+      <button class="btn btn-primary" onclick="dropReasonSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="imgLightboxOverlay" onclick="closeImageLightbox()">
+  <img id="imgLightboxImg" style="max-width:92vw;max-height:92vh;border-radius:8px;cursor:default" onclick="event.stopPropagation()">
 </div>
 
 <div class="toast" id="toast"></div>
@@ -338,7 +394,7 @@ footer a:hover{color:var(--text)}
 
 <script>
 const STORE_KEY = 'jt_blank_v5';
-const STATUSES = ['Applied','Interviewing','Offer','Rejected','Saved'];
+const STATUSES = ['Applied','Interviewing','Offer','Rejected','Saved','Dropped'];
 
 const SEED = [
   {c:'Acme Corp',t:'Senior Technical Writer',l:'Berlin',w:'Remote',p:'LinkedIn',u:'https://example.com/jobs/acme-tw',s:'Applied',n:'Good culture fit. Recruiter mentioned a second interview within two weeks.',d:'2026-06-07'},
@@ -418,6 +474,42 @@ let expandedInterviews = new Set();
 let roundEditJobId = null;
 let roundEditId = null;
 
+function migrateNotesEntry(job) {
+  if (!Array.isArray(job.notesEntries)) {
+    job.notesEntries = [];
+    if (job.notes && String(job.notes).trim()) {
+      job.notesEntries.push({
+        id: 'ne' + Date.now() + Math.random().toString(36).slice(2, 6),
+        text: String(job.notes),
+        timestamp: job.lastModified || null,
+      });
+    }
+  }
+  delete job.notes;
+  return job;
+}
+
+function fmtNoteTimestamp(iso) {
+  if (!iso) return 'Earlier';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'Earlier';
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function notesSearchText(job) {
+  return (job.notesEntries || []).map(e => e.text).join(' ');
+}
+
+function addNoteEntry(job, text) {
+  job.notesEntries = job.notesEntries || [];
+  job.notesEntries.unshift({
+    id: 'ne' + Date.now() + Math.random().toString(36).slice(2, 6),
+    text,
+    timestamp: new Date().toISOString(),
+  });
+}
+
 function load() {
   const raw = localStorage.getItem(STORE_KEY);
   if (raw) { try { jobs = JSON.parse(raw); } catch { jobs = []; } }
@@ -432,6 +524,7 @@ function load() {
     persist();
   }
   migrateMissingTimestamps();
+  jobs.forEach(migrateNotesEntry);
 }
 
 function migrateMissingTimestamps() {
@@ -450,13 +543,18 @@ function migrateMissingTimestamps() {
 function exportCSV() {
   const list = getList();
   const headers = ['Company','Role','Location','Work Model','Platform','Status','URL','Date Added','Last Modified','Notes'];
-  const rows = list.map(j => [
-    j.company, j.title, j.location||'', j.workModel||'', j.platform||'',
-    j.status||'', j.url||'',
-    j.dateAdded||'',
-    j.lastModified ? j.lastModified.slice(0,10) : '',
-    (j.notes||'').replace(/\n/g,' ')
-  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const rows = list.map(j => {
+    const entries = (j.notesEntries || []).slice()
+      .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+    const notesText = entries.map(e => `[${fmtNoteTimestamp(e.timestamp)}] ${e.text}`).join('\n');
+    return [
+      j.company, j.title, j.location||'', j.workModel||'', j.platform||'',
+      j.status||'', j.url||'',
+      j.dateAdded||'',
+      j.lastModified ? j.lastModified.slice(0,10) : '',
+      notesText
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
   const csv = [headers.join(','), ...rows].join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
@@ -497,6 +595,7 @@ function importCSV(event) {
       if (!company && !title) continue;
       const statusRaw = idx.status >= 0 ? cols[idx.status] : '';
       const status = STATUSES.includes(statusRaw) ? statusRaw : 'Applied';
+      const importedNoteText = idx.notes >= 0 ? cols[idx.notes] : '';
       jobs.push({
         id: 'imp' + Date.now() + i,
         company, title,
@@ -506,7 +605,11 @@ function importCSV(event) {
         status,
         url: idx.url >= 0 ? cols[idx.url] : '',
         dateAdded: idx.dateAdded >= 0 ? cols[idx.dateAdded] : '',
-        notes: idx.notes >= 0 ? cols[idx.notes] : '',
+        notesEntries: importedNoteText ? [{
+          id: 'ne' + Date.now() + Math.random().toString(36).slice(2, 6),
+          text: importedNoteText,
+          timestamp: null,
+        }] : [],
         lastModified: new Date().toISOString(),
       });
       added++;
@@ -533,15 +636,19 @@ function clearSampleJobs() {
 function getList() {
   const q = (document.getElementById('searchInput').value || '').toLowerCase();
   const srt = document.getElementById('sortSelect').value;
-  const ORDER = {Applied:0,Interviewing:1,Saved:2,Rejected:3,Offer:4};
+  const ORDER = {Applied:0,Interviewing:1,Saved:2,Rejected:3,Offer:4,Dropped:5};
+  const dateFrom = document.getElementById('dateFrom')?.value || '';
+  const dateTo = document.getElementById('dateTo')?.value || '';
 
   let list = jobs.filter(j => {
     if (filter === 'allApplied') return ['Applied','Interviewing','Offer','Rejected'].includes(j.status);
     if (filter !== 'all' && j.status !== filter) return false;
     if (q) {
-      const hay = [j.company,j.title,j.platform,j.location,j.notes].join(' ').toLowerCase();
+      const hay = [j.company,j.title,j.platform,j.location,notesSearchText(j)].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
+    if (dateFrom && (!j.dateAdded || j.dateAdded < dateFrom)) return false;
+    if (dateTo && (!j.dateAdded || j.dateAdded > dateTo)) return false;
     return true;
   });
 
@@ -572,9 +679,16 @@ function render() {
   const tbody = document.getElementById('tbody');
   const empty = document.getElementById('empty');
 
-  const counts = {Applied:0,Interviewing:0,Offer:0,Rejected:0,Saved:0};
-  jobs.forEach(j => { if (counts[j.status]!==undefined) counts[j.status]++; });
-  const total = jobs.length;
+  const dateFrom = document.getElementById('dateFrom')?.value || '';
+  const dateTo = document.getElementById('dateTo')?.value || '';
+  const dateFilteredJobs = jobs.filter(j => {
+    if (dateFrom && (!j.dateAdded || j.dateAdded < dateFrom)) return false;
+    if (dateTo && (!j.dateAdded || j.dateAdded > dateTo)) return false;
+    return true;
+  });
+  const counts = {Applied:0,Interviewing:0,Offer:0,Rejected:0,Saved:0,Dropped:0};
+  dateFilteredJobs.forEach(j => { if (counts[j.status]!==undefined) counts[j.status]++; });
+  const total = dateFilteredJobs.length;
   const allAppliedCount = counts.Applied + counts.Interviewing + counts.Offer + counts.Rejected;
   const fDefs = [
     {key:'all',label:'All',count:total},
@@ -600,28 +714,45 @@ function render() {
       <td class="td-company">${name}</td>
       <td class="td-role" title="${x(j.title)}">${x(j.title)}</td>
       <td class="td-loc">${x(loc)}</td>
-      <td>${j.url ? `<a href="${x(j.url)}" target="_blank" rel="noopener" class="plat-link" title="Open listing">${x(j.platform||'Link')} ↗</a>` : `<span style="color:var(--muted);font-size:12px">${x(j.platform||'')}</span>`}</td>
+      <td>${j.url ? `<a href="${x(j.url)}" target="_blank" rel="noopener" class="plat-link" title="Open listing">${x(j.platform||'Link')} ↗</a><span class="listing-closed${j.listingClosed ? ' active' : ''}" onclick="toggleListingClosed('${q(j.id)}')" title="${j.listingClosed ? 'No longer open' : 'Mark as no longer open'}">&#8856;</span>` : `<span style="color:var(--muted);font-size:12px">${x(j.platform||'')}</span>`}</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <select class="status-select badge badge-${x(j.status)}" onchange="updateStatus('${j.id}', this.value)">
+          <select class="status-select badge badge-${x(j.status)}" onchange="updateStatus('${q(j.id)}', this.value)">
             ${STATUSES.map(s => `<option value="${s}"${s === j.status ? ' selected' : ''}>${s}</option>`).join('')}
           </select>
           ${interviewSummaryHtml(j)}
         </div>
       </td>
       <td class="td-date">${j.dateAdded ? fmtDate(j.dateAdded) : '—'}</td>
-      <td class="td-notes" onclick="this.classList.toggle('open')" title="${x(j.notes||'')}">
-        ${j.notes ? x(j.notes) : '<span style="opacity:.4">—</span>'}
+      <td class="td-notes" onclick="editNote(event,this,'${q(j.id)}')">
+        ${attachIndicatorHtml(j)}${(j.notesEntries && j.notesEntries[0]) ? x(j.notesEntries[0].text) : '<span style="opacity:.4">—</span>'}
       </td>
       <td class="td-actions">
-        <button class="btn-icon" title="Edit" onclick="editJob('${j.id}')">✎</button>
-        <button class="btn-icon del" title="Delete" onclick="delJob('${j.id}')">✕</button>
+        <button class="btn-icon" title="Edit" onclick="editJob('${q(j.id)}')">✎</button>
+        <button class="btn-icon del" title="Delete" onclick="delJob('${q(j.id)}')">✕</button>
       </td>
     </tr>` + ((j.interviewRounds && j.interviewRounds.length && expandedInterviews.has(j.id)) ? renderInterviewExpandRow(j) : '');
   }).join('');
 }
 
 function setFilter(f) { filter = f; render(); }
+
+function clearDateRange() {
+  const from = document.getElementById('dateFrom');
+  const to = document.getElementById('dateTo');
+  if (from) from.value = '';
+  if (to) to.value = '';
+  render();
+}
+
+function toggleListingClosed(id) {
+  const job = jobs.find(j => j.id === id);
+  if (!job) return;
+  job.listingClosed = !job.listingClosed;
+  job.lastModified = new Date().toISOString();
+  persist();
+  render();
+}
 
 function isRoundDone(r) {
   if (r.outcome === 'passed' || r.outcome === 'failed') return true;
@@ -646,7 +777,7 @@ function interviewSummaryHtml(j) {
   const rounds = j.interviewRounds || [];
   if (!rounds.length) {
     if (j.status !== 'Interviewing') return '';
-    return `<button class="iw-toggle" onclick="openRoundModal('${j.id}', null)">+ interview date</button>`;
+    return `<button class="iw-toggle" onclick="openRoundModal('${q(j.id)}', null)">+ interview date</button>`;
   }
   const now = new Date();
   const nextUpcoming = rounds.filter(r => !isRoundDone(r) && new Date(r.datetime) >= now)
@@ -655,7 +786,7 @@ function interviewSummaryHtml(j) {
     ? fmtRoundDate(nextUpcoming.datetime)
     : `${rounds.length} round${rounds.length > 1 ? 's' : ''}`;
   const open = expandedInterviews.has(j.id);
-  return `<button class="iw-toggle" onclick="toggleInterview('${j.id}')" title="Interview rounds">
+  return `<button class="iw-toggle" onclick="toggleInterview('${q(j.id)}')" title="Interview rounds">
     <span class="iw-chevron${open ? ' open' : ''}">&#9662;</span> ${label}
   </button>`;
 }
@@ -670,14 +801,14 @@ function renderInterviewExpandRow(j) {
     const outcomeClass = failed ? 'failed' : (done ? 'done' : 'upcoming');
     const leadIcon = failed
       ? `<span class="iw-chip-icon-fail" title="Failed">&#10007;</span>`
-      : `<span class="iw-chip-check" onclick="setRoundOutcome('${j.id}','${r.id}','passed')" title="${done ? 'Clear passed status' : 'Mark as Passed'}">${done ? '&#10003;' : ''}</span>`;
+      : `<span class="iw-chip-check" onclick="setRoundOutcome('${q(j.id)}','${q(r.id)}','passed')" title="${done ? 'Clear passed status' : 'Mark as Passed'}">${done ? '&#10003;' : ''}</span>`;
     const parts = [`Round ${i + 1} &middot; ${fmtRoundDate(r.datetime)}`];
     if (r.type) parts.push(x(r.type));
     return `<span class="iw-chip ${outcomeClass}">
       ${leadIcon}
       <span${done ? ' style="text-decoration:line-through"' : ''}>${parts.join(' &middot; ')}</span>
       ${r.link ? `<a href="${x(r.link)}" target="_blank" rel="noopener" class="iw-chip-link" title="Meeting link">&#128279;</a>` : ''}
-      <span class="iw-chip-edit" onclick="openRoundModal('${j.id}','${r.id}')" title="Edit">&#9998;</span>
+      <span class="iw-chip-edit" onclick="openRoundModal('${q(j.id)}','${q(r.id)}')" title="Edit">&#9998;</span>
     </span>`;
   }).join('');
   return `<tr class="iw-expand-row">
@@ -685,7 +816,7 @@ function renderInterviewExpandRow(j) {
     <td colspan="4">
       <div class="iw-rounds-wrap">
         ${chips}
-        ${lockAdd ? '' : `<button class="iw-add-btn" onclick="openRoundModal('${j.id}', null)">+ Add round</button>`}
+        ${lockAdd ? '' : `<button class="iw-add-btn" onclick="openRoundModal('${q(j.id)}', null)">+ Add round</button>`}
       </div>
     </td>
   </tr>`;
@@ -695,6 +826,148 @@ function toggleInterview(id) {
   if (expandedInterviews.has(id)) expandedInterviews.delete(id);
   else expandedInterviews.add(id);
   render();
+}
+
+function editNote(event, td, jobId) {
+  if (td.classList.contains('editing')) return;
+  const job = jobs.find(j => j.id === jobId);
+  if (!job) return;
+  td.classList.add('editing');
+  renderNotesEditor(td, job);
+}
+
+function attachIndicatorHtml(job) {
+  if (!job.attachments || !job.attachments.length) return '';
+  return '<span style="color:#d29922;margin-right:4px;display:inline-flex;vertical-align:-1px" title="Has attachment"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>';
+}
+
+function renderNotesCollapsed(td, job) {
+  const latest = (job.notesEntries || [])[0];
+  td.innerHTML = attachIndicatorHtml(job) + (latest ? x(latest.text) : '<span style="opacity:.4">—</span>');
+}
+
+function renderNotesEditor(td, job) {
+  const entries = (job.notesEntries || []).slice()
+    .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+
+  td.innerHTML = '';
+  td.classList.remove('open');
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;min-width:240px;max-width:340px;white-space:normal';
+  wrap.addEventListener('mousedown', e => {
+    if (e.target.tagName !== 'TEXTAREA') e.preventDefault();
+  });
+
+  const ta = document.createElement('textarea');
+  ta.rows = 2;
+  ta.placeholder = 'Add a note…';
+  ta.style.cssText = 'width:100%;box-sizing:border-box;resize:vertical;font:inherit;font-size:12px;background:var(--bg);color:var(--text);border:1px solid #58a6ff;border-radius:4px;padding:6px 8px;';
+  wrap.appendChild(ta);
+
+  const addRow = document.createElement('div');
+  addRow.style.cssText = 'display:flex;justify-content:flex-end';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary';
+  addBtn.style.cssText = 'padding:4px 10px;font-size:12px';
+  addBtn.textContent = 'Add note';
+  addBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const text = ta.value.trim();
+    if (!text) return;
+    addNoteEntry(job, text);
+    job.lastModified = new Date().toISOString();
+    persist();
+    renderNotesEditor(td, job);
+  });
+  addRow.appendChild(addBtn);
+  const attachBtn = document.createElement('button');
+  attachBtn.type = 'button';
+  attachBtn.className = 'btn';
+  attachBtn.style.cssText = 'padding:4px 10px;font-size:12px';
+  attachBtn.textContent = '📎 Attach';
+  attachBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    notesAttachTargetJobId = job.id;
+    document.getElementById('notesAttachInput').click();
+  });
+  addRow.insertBefore(attachBtn, addBtn);
+  wrap.appendChild(addRow);
+
+  const notesGallery = document.createElement('div');
+  notesGallery.id = 'notesAttachGallery';
+  notesGallery.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px';
+  wrap.appendChild(notesGallery);
+
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;max-height:200px;overflow-y:auto;border-top:1px solid var(--border)';
+
+  entries.forEach(entry => {
+    const item = document.createElement('div');
+    item.style.cssText = 'padding:6px 0;border-bottom:1px solid var(--border)';
+
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:2px';
+    const ts = document.createElement('span');
+    ts.style.cssText = 'font-size:11px;color:var(--muted)';
+    ts.textContent = fmtNoteTimestamp(entry.timestamp);
+    head.appendChild(ts);
+    if (!entry.isDropReason) {
+      const del = document.createElement('button');
+      del.style.cssText = 'background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0 4px;opacity:.6';
+      del.textContent = '✕';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        job.notesEntries = (job.notesEntries || []).filter(en => en.id !== entry.id);
+        persist();
+        renderNotesEditor(td, job);
+      });
+      head.appendChild(del);
+    }
+
+    const textEl = document.createElement('div');
+    textEl.style.cssText = 'font-size:12px;line-height:1.4;white-space:pre-wrap;cursor:text';
+    textEl.textContent = entry.text;
+    textEl.title = 'Click to edit';
+    textEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const editTa = document.createElement('textarea');
+      editTa.rows = 2;
+      editTa.value = entry.text;
+      editTa.style.cssText = 'width:100%;box-sizing:border-box;resize:vertical;font:inherit;font-size:12px;background:var(--bg);color:var(--text);border:1px solid #58a6ff;border-radius:4px;padding:4px 6px;';
+      textEl.replaceWith(editTa);
+      editTa.focus();
+      const commit = () => {
+        const newText = editTa.value.trim();
+        if (newText) { entry.text = newText; persist(); }
+        renderNotesEditor(td, job);
+      };
+      editTa.addEventListener('keydown', ev => {
+        if (ev.key === 'Escape') { renderNotesEditor(td, job); }
+        else if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commit(); }
+      });
+      editTa.addEventListener('blur', commit);
+    });
+
+    item.appendChild(head);
+    item.appendChild(textEl);
+    list.appendChild(item);
+  });
+  wrap.appendChild(list);
+
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'btn';
+  doneBtn.style.cssText = 'align-self:flex-end;padding:4px 10px;font-size:12px';
+  doneBtn.textContent = 'Done';
+  doneBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    td.classList.remove('editing');
+    renderNotesCollapsed(td, job);
+  });
+  wrap.appendChild(doneBtn);
+
+  td.appendChild(wrap);
+  renderNotesAttachGallery(job);
+  ta.focus();
 }
 
 function removeRound(jobId, roundId) {
@@ -751,12 +1024,52 @@ function openRoundModal(jobId, roundId) {
   }
   document.getElementById('roundDeleteBtn').style.display = roundId ? '' : 'none';
   document.getElementById('roundOverlay').classList.add('open');
+  renderRoundAttachGallery();
 }
 
 function closeRoundModal() {
   document.getElementById('roundOverlay').classList.remove('open');
   roundEditJobId = null;
   roundEditId = null;
+}
+
+function handleRoundAttachFiles(event) {
+  const files = Array.from(event.target.files || []);
+  const job = roundEditJobId ? jobs.find(j => j.id === roundEditJobId) : null;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/') || !job) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      job.attachments = job.attachments || [];
+      job.attachments.push({ id: 'att' + Date.now() + Math.random().toString(36).slice(2,6), dataUrl: ev.target.result, addedAt: new Date().toISOString() });
+      persist();
+      renderRoundAttachGallery();
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderRoundAttachGallery() {
+  const gallery = document.getElementById('roundAttachGallery');
+  if (!gallery) return;
+  const job = roundEditJobId ? jobs.find(j => j.id === roundEditJobId) : null;
+  const list = job ? (job.attachments || []) : [];
+  gallery.innerHTML = list.map(a => `
+    <div style="position:relative;width:56px;height:56px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
+      <img src="${a.dataUrl}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openImageLightbox(this.src)">
+      <button type="button" onclick="removeRoundAttachment('${q(a.id)}')" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;width:14px;height:14px;border-radius:50%;cursor:pointer;line-height:1">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeRoundAttachment(attId) {
+  const job = roundEditJobId ? jobs.find(j => j.id === roundEditJobId) : null;
+  if (job) {
+    job.attachments = (job.attachments || []).filter(a => a.id !== attId);
+    persist();
+  }
+  renderRoundAttachGallery();
 }
 
 function deleteRoundFromModal() {
@@ -808,6 +1121,25 @@ function x(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// For values interpolated into a single-quoted JS string inside an inline
+// handler attribute. JS-escape first, then HTML-escape: the backslash
+// survives the HTML parser's entity decoding.
+function q(s) {
+  return x(String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/[\r\n]/g, '\\n'));
+}
+
+// Job/round ids only ever come from this app's own generators; anything
+// else (e.g. from an imported file) is replaced with a freshly generated
+// safe one rather than trusted as-is.
+function cleanId(v, prefix) {
+  return /^[A-Za-z0-9_-]{1,64}$/.test(String(v || ''))
+    ? String(v)
+    : prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
 function openModal(id) {
   editId = id || null;
   document.getElementById('modalTitle').textContent = id ? 'Edit Job' : 'Add Job';
@@ -817,26 +1149,126 @@ function openModal(id) {
     setF('fCompany', j.company); setF('fTitle', j.title);
     setF('fLocation', j.location); setF('fWorkModel', j.workModel||'');
     setF('fPlatform', j.platform); setF('fStatus', j.status);
-    setF('fUrl', j.url); setF('fNotes', j.notes);
+    setF('fUrl', j.url); setF('fNotes', '');
     setF('fDate', j.dateAdded||'');
   } else {
     ['fCompany','fTitle','fLocation','fPlatform','fUrl','fNotes'].forEach(id=>setF(id,''));
     setF('fWorkModel','Remote'); setF('fStatus','Applied');
     setF('fDate', new Date().toISOString().slice(0,10));
   }
+  pendingAttachments = [];
   document.getElementById('overlay').classList.add('open');
   document.getElementById('fCompany').focus();
   setTimeout(initAllAutocomplete, 0);
+  renderAttachGallery();
 }
 
 function setF(id, val) { document.getElementById(id).value = val; }
 function closeModal() { document.getElementById('overlay').classList.remove('open'); editId = null; }
 function bgClick(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
 
+let pendingAttachments = [];
+
+function handleAttachFiles(event) {
+  const files = Array.from(event.target.files || []);
+  const targetJob = editId ? jobs.find(j => j.id === editId) : null;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      if (targetJob) {
+        targetJob.attachments = targetJob.attachments || [];
+        targetJob.attachments.push({ id: 'att' + Date.now() + Math.random().toString(36).slice(2,6), dataUrl, addedAt: new Date().toISOString() });
+        persist();
+      } else {
+        pendingAttachments.push({ id: 'att' + Date.now() + Math.random().toString(36).slice(2,6), dataUrl, addedAt: new Date().toISOString() });
+      }
+      renderAttachGallery();
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderAttachGallery() {
+  const gallery = document.getElementById('attachGallery');
+  if (!gallery) return;
+  const job = editId ? jobs.find(j => j.id === editId) : null;
+  const list = job ? (job.attachments || []) : pendingAttachments;
+  gallery.innerHTML = list.map(a => `
+    <div style="position:relative;width:56px;height:56px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
+      <img src="${a.dataUrl}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openImageLightbox(this.src)">
+      <button type="button" onclick="removeAttachment('${q(a.id)}')" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;width:14px;height:14px;border-radius:50%;cursor:pointer;line-height:1">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeAttachment(attId) {
+  const job = editId ? jobs.find(j => j.id === editId) : null;
+  if (job) {
+    job.attachments = (job.attachments || []).filter(a => a.id !== attId);
+    persist();
+  } else {
+    pendingAttachments = pendingAttachments.filter(a => a.id !== attId);
+  }
+  renderAttachGallery();
+}
+
+let notesAttachTargetJobId = null;
+
+function handleNotesAttachFiles(event) {
+  const files = Array.from(event.target.files || []);
+  const job = jobs.find(j => j.id === notesAttachTargetJobId);
+  if (!job) { event.target.value = ''; return; }
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      job.attachments = job.attachments || [];
+      job.attachments.push({ id: 'att' + Date.now() + Math.random().toString(36).slice(2,6), dataUrl: ev.target.result, addedAt: new Date().toISOString() });
+      persist();
+      renderNotesAttachGallery(job);
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderNotesAttachGallery(job) {
+  const gallery = document.getElementById('notesAttachGallery');
+  if (!gallery) return;
+  const list = job.attachments || [];
+  gallery.innerHTML = list.map(a => `
+    <div style="position:relative;width:48px;height:48px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
+      <img src="${a.dataUrl}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openImageLightbox(this.src)">
+      <button type="button" onclick="removeNotesAttachment('${q(job.id)}','${q(a.id)}')" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;width:14px;height:14px;border-radius:50%;cursor:pointer;line-height:1">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeNotesAttachment(jobId, attId) {
+  const job = jobs.find(j => j.id === jobId);
+  if (!job) return;
+  job.attachments = (job.attachments || []).filter(a => a.id !== attId);
+  persist();
+  renderNotesAttachGallery(job);
+}
+
+function openImageLightbox(src) {
+  document.getElementById('imgLightboxImg').src = src;
+  document.getElementById('imgLightboxOverlay').classList.add('open');
+}
+function closeImageLightbox() {
+  document.getElementById('imgLightboxOverlay').classList.remove('open');
+  document.getElementById('imgLightboxImg').src = '';
+}
+
 function saveJob() {
   const company = document.getElementById('fCompany').value.trim();
   const title   = document.getElementById('fTitle').value.trim();
   if (!company || !title) { toast('Company and role are required.'); return; }
+  const noteText = document.getElementById('fNotes').value.trim();
   const data = {
     company, title,
     location:  document.getElementById('fLocation').value.trim(),
@@ -844,16 +1276,24 @@ function saveJob() {
     platform:  document.getElementById('fPlatform').value.trim(),
     status:    document.getElementById('fStatus').value,
     url:       document.getElementById('fUrl').value.trim(),
-    notes:     document.getElementById('fNotes').value.trim(),
     dateAdded: document.getElementById('fDate').value || null,
     lastModified: new Date().toISOString(),
   };
   if (editId) {
     const i = jobs.findIndex(j => j.id === editId);
-    if (i !== -1) jobs[i] = {...jobs[i], ...data};
+    if (i !== -1) {
+      jobs[i] = {...jobs[i], ...data};
+      if (noteText) addNoteEntry(jobs[i], noteText);
+    }
     toast('Updated.');
   } else {
-    jobs.unshift({id: 'j' + Date.now(), ...data});
+    const notesEntries = noteText ? [{
+      id: 'ne' + Date.now() + Math.random().toString(36).slice(2, 6),
+      text: noteText,
+      timestamp: new Date().toISOString(),
+    }] : [];
+    jobs.unshift({id: 'j' + Date.now(), ...data, notesEntries, attachments: pendingAttachments});
+    pendingAttachments = [];
     toast('Added.');
   }
   persist(); closeModal(); render();
@@ -867,14 +1307,103 @@ function delJob(id) {
   persist(); render(); toast('Deleted.');
 }
 
+let dropReasonJobId = null;
+
 function updateStatus(id, newStatus) {
   const job = jobs.find(j => j.id === id);
   if (!job) return;
+  if (newStatus === 'Dropped') {
+    dropReasonJobId = id;
+    pendingDropAttachments = [];
+    const input = document.getElementById('dropReasonInput');
+    if (input) input.value = '';
+    document.getElementById('dropReasonOverlay').classList.add('open');
+    render();
+    renderDropAttachGallery();
+    return;
+  }
   job.status = newStatus;
   job.lastModified = new Date().toISOString();
   persist();
   render();
   toast('Status updated.');
+}
+
+function dropReasonCancel() {
+  document.getElementById('dropReasonOverlay').classList.remove('open');
+  dropReasonJobId = null;
+  render();
+}
+
+function dropReasonSave() {
+  const job = jobs.find(j => j.id === dropReasonJobId);
+  const input = document.getElementById('dropReasonInput');
+  const reason = (input ? input.value : '').trim();
+  if (!reason) { toast('Please enter a reason.'); return; }
+  document.getElementById('dropReasonOverlay').classList.remove('open');
+  dropReasonJobId = null;
+  if (!job) return;
+  job.notesEntries = job.notesEntries || [];
+  job.notesEntries.unshift({
+    id: 'ne' + Date.now() + Math.random().toString(36).slice(2, 6),
+    text: `Dropped: ${reason}`,
+    timestamp: new Date().toISOString(),
+    isDropReason: true,
+  });
+  job.status = 'Dropped';
+  job.lastModified = new Date().toISOString();
+  persist();
+  render();
+  toast('Marked Dropped.');
+}
+
+let pendingDropAttachments = [];
+
+function handleDropAttachFiles(event) {
+  const files = Array.from(event.target.files || []);
+  const targetJob = dropReasonJobId ? jobs.find(j => j.id === dropReasonJobId) : null;
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      const record = { id: 'att' + Date.now() + Math.random().toString(36).slice(2,6), dataUrl, addedAt: new Date().toISOString() };
+      if (targetJob) {
+        targetJob.attachments = targetJob.attachments || [];
+        targetJob.attachments.push(record);
+        persist();
+      } else {
+        pendingDropAttachments.push(record);
+      }
+      renderDropAttachGallery();
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderDropAttachGallery() {
+  const gallery = document.getElementById('dropAttachGallery');
+  if (!gallery) return;
+  const job = dropReasonJobId ? jobs.find(j => j.id === dropReasonJobId) : null;
+  const list = job ? (job.attachments || []) : pendingDropAttachments;
+  gallery.innerHTML = list.map(a => `
+    <div style="position:relative;width:56px;height:56px;border-radius:4px;overflow:hidden;border:1px solid var(--border)">
+      <img src="${a.dataUrl}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="openImageLightbox(this.src)">
+      <button type="button" onclick="removeDropAttachment('${q(a.id)}')" style="position:absolute;top:1px;right:1px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;width:14px;height:14px;border-radius:50%;cursor:pointer;line-height:1">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeDropAttachment(attId) {
+  const job = dropReasonJobId ? jobs.find(j => j.id === dropReasonJobId) : null;
+  if (job) {
+    job.attachments = (job.attachments || []).filter(a => a.id !== attId);
+    persist();
+  } else {
+    pendingDropAttachments = pendingDropAttachments.filter(a => a.id !== attId);
+  }
+  renderDropAttachGallery();
 }
 
 let toastTimer;
@@ -901,7 +1430,7 @@ function downloadTracker(e) {
 load(); render();
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); closeRoundModal(); }
+  if (e.key === 'Escape') { closeModal(); closeRoundModal(); closeImageLightbox(); }
   if ((e.metaKey||e.ctrlKey) && e.key === 'k') {
     e.preventDefault();
     document.getElementById('searchInput').focus();
